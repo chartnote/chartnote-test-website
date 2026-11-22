@@ -453,6 +453,7 @@
       </div>
 
       <form id="lead-form" novalidate>
+        <div aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;"><label>Leave this field empty <input type="text" name="_hp" tabindex="-1" autocomplete="off" value="" /></label></div>
         <div class="form-fields">
 
           <div class="field-group">
@@ -564,15 +565,27 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting…';
 
-    await fetch('https://hooks.zapier.com/hooks/catch/9771176/u7noid3/', {
-      method: 'POST',
-      body: JSON.stringify({
-        name:   nameInput.value.trim(),
-        email:  emailInput.value.trim(),
-        source: 'acp2026',
-        ts:     new Date().toISOString(),
-      }),
-    });
+    const honeypot = form.querySelector('input[name="_hp"]');
+    try {
+      const res = await fetch('/api/forms/acp2026', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:   nameInput.value.trim(),
+          email:  emailInput.value.trim(),
+          source: 'acp2026',
+          ts:     new Date().toISOString(),
+          _hp:    honeypot ? honeypot.value : '',
+        }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+    } catch (err) {
+      console.error('[Chartnote] Submission error:', err);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Claim My Free Credits →';
+      alert('Something went wrong. Please try again or email us directly.');
+      return;
+    }
 
     formSection.style.display = 'none';
     successState.classList.add('visible');

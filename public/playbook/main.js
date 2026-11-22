@@ -68,18 +68,11 @@
 // ---------------------------------------------------------------------------
 
 /**
- * SWAP IN YOUR REAL BACKEND HERE.
- *
- * Replace FORM_ENDPOINT with your actual form handler URL:
- *   - HubSpot forms API
- *   - Formspree (https://formspree.io)
- *   - your own API route
- *   - Zapier webhook, etc.
- *
- * The current implementation logs the payload and shows the thank-you state
- * without making a real network request.
+ * Same-origin server route (app/api/forms/[form]/route.js). It forwards the
+ * payload to the Zapier hook configured in the ZAPIER_HOOK_PLAYBOOK env var,
+ * so the hook URL never ships to the browser.
  */
-const FORM_ENDPOINT = 'https://hooks.zapier.com/hooks/catch/9771176/upgbtxd/'; // e.g. 'https://formspree.io/f/YOUR_ID'
+const FORM_ENDPOINT = '/api/forms/playbook';
 
 /**
  * SWAP IN PDF DOWNLOAD LINK HERE.
@@ -182,16 +175,14 @@ async function submitForm(payload) {
     return { ok: true };
   }
 
-  // Zapier webhooks don't send CORS headers, so use no-cors.
-  // The request still reaches Zapier — we just can't read the response.
-  await fetch(FORM_ENDPOINT, {
+  const honeypot = form.querySelector('input[name="_hp"]');
+  const res = await fetch(FORM_ENDPOINT, {
     method: 'POST',
-    mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, _hp: honeypot ? honeypot.value : '' }),
   });
 
-  return { ok: true };
+  return { ok: res.ok };
 }
 
 function triggerPdfDownload() {
