@@ -902,6 +902,7 @@
           <p class="form-card-sub">We'll reach out within 1 business day to schedule your session.</p>
 
           <form id="demo-form" novalidate>
+            <div aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;"><label>Leave this field empty <input type="text" name="_hp" tabindex="-1" autocomplete="off" value="" /></label></div>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="fname">First name <span class="req">*</span></label>
@@ -1359,9 +1360,11 @@
       };
 
       try {
-        await fetch('https://hooks.zapier.com/hooks/catch/9771176/unqdgvs/', {
+        const honeypot = this.querySelector('input[name="_hp"]');
+        await fetch('/api/forms/demo', {
           method: 'POST',
-          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...data, _hp: honeypot ? honeypot.value : '' }),
         });
       } catch (err) {
         // Lead capture failed. The visitor can still book a time.
